@@ -97,9 +97,23 @@ class SvnFlowExecution {
         }
         else
         {
-            $target_url = $svn_data['repository_url'] . '/trunk/';
+            $target_url = $svn_data['repository_url'] . '/trunk';
         }
-                
+
+        try
+        {
+            $active_feature_name = $this->getActiveFeatureName();        
+            $active_url = $svn_data['repository_url'] . '/branches/' . $active_feature_name;
+        }
+        catch (Exception $exception)
+        {
+            $active_url = $svn_data['repository_url'] . '/trunk';
+        }
+ 
+        $active_path = substr($svn_data['url'], strlen($active_url));
+
+        $target_url = $target_url . $active_path;
+
         system('svn switch --non-interactive ' .  $target_url . ' .');
         
         $this->logDebug('Checked out: ' . $feature_name);
@@ -155,13 +169,41 @@ class SvnFlowExecution {
     
     public function isWorkingCopyClean()
     {
-        $raw_data = $this->executeSvnCommand('status .');
-        
-        if (isset($raw_data['target']['entry']))
+        $raw_data = $this->executeSvnCommand('status . --ignore-externals');
+
+        if (empty($raw_data['target']['entry']))
+        {
+            return true;
+        }
+
+        if (isset($raw_data['target']['entry']['@attributes']))
+        {
+            $raw_data['target']['entry'] = array($raw_data['target']['entry']);
+        }
+
+        $external_paths = array();
+        $non_external_paths = array();
+
+        foreach ($raw_data['target']['entry'] as $entry)
+        {
+
+            $type = $entry['wc-status']['@attributes']['item'];
+
+            if ($type === 'external')
+            {
+                $external_paths[] = $entry['@attributes']['path'];
+            }
+            else
+            {
+                $non_external_paths[] = $entry['@attributes']['path'];
+            }
+        }
+
+        if (!empty($non_external_paths))
         {
             return false;
         }
-        
+
         return true;
     }
 
@@ -338,7 +380,8 @@ class SvnFlowExecution {
         return array(
             'revision' => (string) $raw_data_xml->entry->attributes()->revision,
             'last_modified_date' => strtotime((string) $raw_data_xml->entry->commit->date),
-            'repository_url' => (string) $raw_data_xml->entry->repository->root
+            'repository_url' => (string) $raw_data_xml->entry->repository->root,
+            'url' => (string) $raw_data_xml->entry->url
         );      
     }
 
