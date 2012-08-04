@@ -98,6 +98,7 @@ class SvnFlowExecution {
             }
             else
             {
+                $this->logDebug('branchy 1.0.0');
                 return $this->executeHelp();   
             }
         }           

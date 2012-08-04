@@ -1,9 +1,9 @@
 # branchy
 
-* Version: 1.0-dev
-* Date Not yet released
+* Version: 1.0.0
+* Date: 4. August 2012
 
-**branchy** is a subversion tool to control and manage branches in a feature driven way. Similar to gitflow by nvie <https://github.com/nvie/gitflow>.
+**branchy** is a subversion tool to control and manage branches in a feature driven way. Similar to gitflow by nvie <https://github.com/nvie/gitflow>. **branchy** is copyright 2011-2012 by DracoBlue.
 
 ## Example Usage
 
@@ -36,7 +36,7 @@ After this merge, you have to `svn commit` the changes! If you want to automatic
 If you want to see what changed in your branch, you can show the changes against the `trunk` with
 
     $ branchy show-changes
-
+    
 ### Finish the Feature Branch
 
 If you finished your work, you can finish the feature with this
@@ -60,6 +60,13 @@ and checkout a specific feature with:
 If you want to checkout the trunk you can do it like this:
 
     $ branchy cehckout trunk
+
+### Show changes between 2 features
+
+If you want to see what changed in your branch, you can show the changes against another feature `awesome2` with
+
+    $ branchy show-changes awesome2
+    
 
 ### .bashrc autocompletion
 
@@ -99,12 +106,17 @@ If you want to have autocompletion for feature names for branchy checkout and br
     
     complete -F _branchy_magic branchy
 
+## Resources
+
+* Tickets: https://github.com/DracoBlue/branchy/issues
+
 ## Changelog
 
-* 1.0-dev
+* 1.0.0 (2012/08/04)
  - added possibility to use show-changes with additional feature name
  - added help action to display information about all available actions
  - added .bashrc snippet 
+ - initial version
 
 ## License
 
