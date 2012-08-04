@@ -61,6 +61,44 @@ If you want to checkout the trunk you can do it like this:
 
     $ branchy cehckout trunk
 
+### .bashrc autocompletion
+
+If you want to have autocompletion for feature names for branchy checkout and branchy show-changes, you have to add those lines to your .bashrc file.
+
+    _branchy_magic() 
+    {
+        local cur prev opts
+        COMPREPLY=()
+        cur="${COMP_WORDS[COMP_CWORD]}" 
+    
+        if [ "$COMP_CWORD" == "1" ]
+        then
+            opts=$( branchy help 2>&1 | grep "^ \w" | cut -f '2-' -d ' ' | grep ^$cur )
+            COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        fi
+    
+        if [ "$COMP_CWORD" == "2" ]
+        then
+            action_name="${COMP_WORDS[1]}" 
+    
+            if [ "$action_name" == "show-changes" ]
+            then
+                opts=$( branchy features 2>&1 | grep ']' | cut -f '2-' -d ']' | cut -f '2-' -d ' ' | grep ^$cur )
+                COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+            fi
+            if [ "$action_name" == "checkout" ]
+            then
+                opts=$( branchy features 2>&1 | grep ']' | cut -f '2-' -d ']' | cut -f '2-' -d ' ' | grep ^$cur )
+                COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+            fi
+        fi
+    
+    
+        return 0
+    }
+    
+    complete -F _branchy_magic branchy
+
 ## License
 
 This work is copyright by DracoBlue (<http://dracoblue.net>) and licensed under the terms of MIT License.
