@@ -99,6 +99,13 @@ If you want to have autocompletion for feature names for branchy checkout and br
     
     complete -F _branchy_magic branchy
 
+## Changelog
+
+* 1.0-dev
+ - added possibility to use show-changes with additional feature name
+ - added help action to display information about all available actions
+ - added .bashrc snippet 
+
 ## License
 
 This work is copyright by DracoBlue (<http://dracoblue.net>) and licensed under the terms of MIT License.

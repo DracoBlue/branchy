@@ -13,9 +13,32 @@ class SvnFlowExecution {
     public function  __construct($working_directory, $parameters)
     {
         $this->working_directory = $working_directory . '/';
-        $this->action_name = $parameters[1]; 
+        if (!empty($parameters[1]))
+        {
+            $this->action_name = $parameters[1]; 
+        }
         $this->parameters = $parameters;
     }
+
+    protected $help_texts = array(
+        'start-feature' => 'Starting a new feature: branchy start-feature feature_name',
+        'checkout' => array(
+            'Checking out a feature: branchy checkout feature_name',
+            'Checking out trunk: branchy checkout trunk'
+        ),
+        'show-changes' => array(
+            'Show differences between checked out feature and trunk: branchy show changes',
+            'Show differences between checked out feature and another feature: branchy show-changes other_feature_name'
+        ),
+        'features' => array(
+            'List all available features' 
+        ),
+        'finish-feature' => array(
+            'Finish the current feature and merge and commit it into the trunk'
+        ),
+        'auto-merge-trunk' => 'Automaticly merge all changes from trunk and commit them into the feature',
+        'merge-trunk' => 'Merge all changes from trunk into the working directory, but don\'t commit them'
+    );
     
     public function execute()
     {
@@ -25,8 +48,7 @@ class SvnFlowExecution {
         {
             if (!isset($this->parameters[2]))
             {
-                $this->logDebug('Correct usage:');
-                $this->logDebug('* Starting a new feature: branchy start-feature feature_name');
+                $this->executeHelp('start-feature');
                 exit(1);
             }
             return $this->executeStartFeature($this->parameters[2]);   
@@ -35,13 +57,12 @@ class SvnFlowExecution {
         {
             if (!isset($this->parameters[2]))
             {
-                $this->logDebug('Correct usage:');
-                $this->logDebug('* Checking out a feature: branchy checkout feature_name');
-                $this->logDebug('* Checking out trunk: branchy checkout trunk');
+                $this->executeHelp('checkout');
                 exit(1);
             }
             return $this->executeCheckout($this->parameters[2]);   
         }
+        
         if ($this->action_name === 'finish-feature')
         {
             return $this->executeFinishFeature();   
@@ -52,7 +73,14 @@ class SvnFlowExecution {
         }        
         if ($this->action_name === 'show-changes')
         {
-            return $this->executeShowChanges();   
+            if (isset($this->parameters[2]))
+            {
+                return $this->executeShowChanges($this->parameters[2]);
+            }
+            else
+            {
+                return $this->executeShowChanges('trunk');
+            }
         }          
         if ($this->action_name === 'merge-trunk')
         {
@@ -62,6 +90,44 @@ class SvnFlowExecution {
         {
             return $this->executeAutoMergeTrunk();   
         }           
+        if ($this->action_name === 'help')
+        {
+            if (isset($this->parameters[2]))
+            {
+                return $this->executeHelp($this->parameters[2]);
+            }
+            else
+            {
+                return $this->executeHelp();   
+            }
+        }           
+
+        $this->logDebug('Invalid action name. Use \'' . $this->parameters[0]. ' help\' to list all available actions.');
+    }
+
+    public function executeHelp($action_name = '')
+    {
+        $this->logDebug('Correct usage:');
+        $sections = array($action_name);
+
+        if ($action_name === '')
+        {
+            $sections = array_keys($this->help_texts);
+        }
+
+        foreach ($sections as $section)
+        {
+            $this->logDebug(' ' . $section);
+            $help_texts = $this->help_texts[$section];
+            if (!is_array($help_texts))
+            {
+                $help_texts = array($help_texts);
+            }
+            foreach ($help_texts as $help_text)
+            {
+                $this->logDebug('  * ' . $help_text);
+            }
+        }
     }
     
     public function executeStartFeature($feature_name)
@@ -262,7 +328,7 @@ class SvnFlowExecution {
         system('svn ci --non-interactive -m\'Merged trunk\' .');
     }
     
-    public function executeShowChanges()
+    public function executeShowChanges($other_feature_name)
     {
         /*
          * Muss auf alle Fälle beachten, wann der feature branch angefangen wurde.
@@ -276,14 +342,28 @@ class SvnFlowExecution {
         catch (Exception $exception)
         {
             /*
-             * On trunk ... , so just svn di!
+             * On trunk ... 
              */
-            system('svn di --non-interactive .');
-            return ;
+            $feature_name = 'trunk';
         }
-        
-        $start_url = $svn_data['repository_url'] . '/trunk';
-        $target_url = $svn_data['repository_url'] . '/branches/' . $feature_name;
+
+        if ($other_feature_name !== 'trunk')
+        {
+            $start_url = $svn_data['repository_url'] . '/branches/' . $other_feature_name;
+        }
+        else
+        {
+            $start_url = $svn_data['repository_url'] . '/trunk';
+        }
+
+        if ($feature_name !== 'trunk')
+        {
+            $target_url = $svn_data['repository_url'] . '/branches/' . $feature_name;
+        }
+        else
+        {
+            $target_url = $svn_data['repository_url'] . '/trunk';
+        }
         
         system('svn di --non-interactive -- ' . $start_url . ' ' . $target_url);                
     }
@@ -326,7 +406,7 @@ class SvnFlowExecution {
     
     protected function logDebug($data)
     {
-        echo $data . PHP_EOL;
+        fwrite(STDERR, $data . PHP_EOL);
     }
     
     protected function getActiveFeatureName()
